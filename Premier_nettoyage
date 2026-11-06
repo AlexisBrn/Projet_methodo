@@ -47,9 +47,7 @@ dvf <- dvf |>
             l_artcgi,   # liste des codes d'articles CGI (Code Général des Impôts) associés à la mutation
             vefa,       # vrai si la mutation est une Vente en l'état futur d'achèvement (VEFA)
             nbdispo,    # nombre de dispositions associées à la mutation
-            nbsuf,      # nombre de subdivisions fiscales composant l'ensemble des parcelles ayant muté
-            l_idv,      # identifiants de la table acheteur_vendeur qui correspondent aux vendeurs
-            l_nomv      #	noms des vendeurs
+            nbsuf       # nombre de subdivisions fiscales composant l'ensemble des parcelles ayant muté
             ))
 
 ```
