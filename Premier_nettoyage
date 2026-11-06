@@ -1,0 +1,61 @@
+---
+title: "Debroussaillage"
+format: html
+---
+
+Importation des tables DVF Bretagne et Pays de la loire, puis filtre sur le départments de la Loire Atlantique.
+Données : https://cerema.app.box.com/v/dvfplus-opendata/folder/427359627966
+Dictionnaire des variables : https://doc-datafoncier.cerema.fr/doc/dv3f/mutation
+```{r}
+library(dplyr)
+
+dvf_bretagne <- read.csv2("dvf_bretagne.csv", sep = "|")
+
+dvf_loire <- read.csv2("dvf_loire.csv", sep = "|")
+
+dvf_loire <- dvf_loire |> 
+  filter(coddep == 44)
+
+# Fusion des 2 tables
+dvf <- bind_rows(dvf_bretagne, dvf_loire)
+```
+
+On garde seulement les observations concernant une seule maison ou appartement.
+```{r}
+dvf <- dvf |> 
+  filter(libtypbien %in% c("UNE MAISON", "UN APPARTEMENT"))
+
+# Affichage des plus hautes valeurs de transaction
+dvf$valeurfonc <- as.numeric(dvf$valeurfonc)
+
+dvf |>
+  dplyr::arrange(desc(valeurfonc)) |>
+  dplyr::select(idmutation, valeurfonc, nblocmai, nblocapt, libtypbien) |>
+  head(20)
+```
+
+Suppression des variables inutiles. On garde seulement idmutation comme identifiant
+```{r}
+colnames(dvf)
+
+dvf <- dvf |> 
+  select(-c(idmutinvar,
+            idopendata,
+            codservch,  # code du service de conservation des hypothèques
+            refdoc,     # référence d'enregistrement du document (acte de vente)
+            nbartcgi,   # nombre d'articles du Code Général des Impôts (CGI) associés à la mutation
+            l_artcgi,   # liste des codes d'articles CGI (Code Général des Impôts) associés à la mutation
+            vefa,       # vrai si la mutation est une Vente en l'état futur d'achèvement (VEFA)
+            nbdispo,    # nombre de dispositions associées à la mutation
+            nbsuf,      # nombre de subdivisions fiscales composant l'ensemble des parcelles ayant muté
+            l_idv,      # identifiants de la table acheteur_vendeur qui correspondent aux vendeurs
+            l_nomv      #	noms des vendeurs
+            ))
+
+```
+A voir :
+- Quelles variables encore garder
+- Nouvelles variables à créer
+```{r}
+summary(dvf)
+```
