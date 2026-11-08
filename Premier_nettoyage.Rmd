@@ -6,8 +6,11 @@ format: html
 Importation des tables DVF Bretagne et Pays de la loire, puis filtre sur le départments de la Loire Atlantique.
 Données : https://cerema.app.box.com/v/dvfplus-opendata/folder/427359627966
 Dictionnaire des variables : https://doc-datafoncier.cerema.fr/doc/dv3f/mutation
+
+Géométrie utilisée : système Lambert-93 (EPSG:2154)
 ```{r}
 library(dplyr)
+library(sf)
 
 dvf_bretagne <- read.csv2("dvf_bretagne.csv", sep = "|")
 
@@ -47,13 +50,115 @@ dvf <- dvf |>
             l_artcgi,   # liste des codes d'articles CGI (Code Général des Impôts) associés à la mutation
             vefa,       # vrai si la mutation est une Vente en l'état futur d'achèvement (VEFA)
             nbdispo,    # nombre de dispositions associées à la mutation
-            nbsuf       # nombre de subdivisions fiscales composant l'ensemble des parcelles ayant muté
+            nbsuf,      # nombre de subdivisions fiscales composant l'ensemble des parcelles ayant muté
             ))
-
 ```
-A voir :
-- Quelles variables encore garder
-- Nouvelles variables à créer
+Transformation des variables si besoin
 ```{r}
 summary(dvf)
+dvf$geompar_x <- as.numeric(dvf$geompar_x)
+dvf$geompar_y <- as.numeric(dvf$geompar_y)
+```
+
+Transformation des coordonnées en objet spatial.
+```{r}
+dvf <- dvf |> 
+  st_as_sf(
+    coords = c("geompar_x", "geompar_y"),
+    crs = 2154,
+    remove = FALSE,
+    na.fail = FALSE
+  )
+
+library(mapview)
+
+set.seed(1)
+
+dvf_echantillon <- dvf |>
+  filter(!sf::st_is_empty(geometry)) |>
+  slice_sample(n = 5000)
+
+# Afficher la carte interactive
+mapview(dvf_echantillon)
+```
+
+Création de la variable de distance à a mer. On prend pour le moment la distance euclidienne.
+Ligne de la mer : https://www.data.gouv.fr/datasets/limite-terre-mer-1
+```{r}
+littoral <- st_read("limite_terre_mer_france_metropolitaine_ligne.shp")
+
+st_crs(littoral)
+
+# Vérifier que c'est bien la même projection
+st_crs(dvf) == st_crs(littoral)
+
+# Créer la variable
+dvf$distance_mer_km <- NA_real_
+
+# Garder les observations qui ne sont pas NA
+sum(is.na(dvf$geompar_x) | is.na(dvf$geompar_y))
+pas_coord_na <- which(!st_is_empty(dvf))
+
+# Identifier le segment de littoral le plus proche
+indice <- st_nearest_feature(
+  dvf[pas_coord_na, ],
+  littoral
+)
+
+# Calculer les distances en kilomètres
+dvf$distance_mer_km[pas_coord_na] <- as.numeric(
+  st_distance(
+    dvf[pas_coord_na, ],
+    littoral[indice, ],
+    by_element = TRUE
+  )
+) / 1000
+
+summary(dvf$distance_mer_km)
+```
+
+Création de la variable de distance à une route importante.
+Traçons de route : https://cartes.gouv.fr/rechercher-une-donnee/dataset/IGNF_BD-TOPO
+Documentation (page 19 pour la définition d'importance): https://data.geopf.fr/annexes/ressources/documentation/DC_BDTOPO_2_08.pdf
+```{r}
+routes <- st_read("TRONCON_DE_ROUTE.shp")
+
+st_crs(routes)
+
+# Vérifier que c'est bien la même projection
+st_crs(dvf) == st_crs(routes)
+
+names(routes)
+table(routes$IMPORTANCE)
+
+# Choix : garder les importances 1 et 2
+routes <- routes |>
+  filter(as.character(IMPORTANCE) %in% c("1", "2"))
+
+library(ggplot2)
+
+ggplot() +
+  geom_sf(
+    data = routes,
+    color = "red",
+    linewidth = 0.2
+  ) +
+  coord_sf(expand = TRUE) +
+  theme_minimal()
+# Voir les limites geographiques des routes
+st_bbox(routes)
+
+# Voir le nombre de troncons
+nrow(routes)
+
+# Voir la projection
+st_crs(routes)$input
+```
+
+```{r}
+#write.csv2(
+  #dvf,
+  #file = "C:/Users/nolwe/Documents/ENSAI/3A/Projet methodo/Code/dvf.csv",
+  #row.names = FALSE
+#)
 ```
