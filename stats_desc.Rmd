@@ -1,0 +1,131 @@
+---
+title: "stats_desc"
+output: html_document
+date: "2026-11-08"
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+```
+
+
+```{r}
+dvf <- read.csv2("dvf.csv", sep = ";")
+```
+
+```{r}
+summary(dvf)
+
+```
+
+```{r}
+mutations <- dvf |>
+  distinct(libnatmut) #6 types de mutations
+  
+mut_par_an <- dvf |> 
+  count(anneemut, name = "nb_mutations")
+
+ggplot(mut_par_an, aes(x = factor(anneemut), y = nb_mutations)) +
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = format(nb_mutations, big.mark = " ")),
+            vjust = -0.5, size = 3.5) +
+  scale_y_continuous(labels = scales::label_number(big.mark = " "),
+                     expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Nombre de mutations par année",
+       x = "Année de mutation",
+       y = "Nombre de mutations") +
+  theme_minimal()
+```
+
+```{r}
+mut_par_an_type <- dvf |>
+  count(anneemut, libnatmut, name = "nb_mutations")
+
+ggplot(mut_par_an_type, aes(x = factor(anneemut), y = nb_mutations)) +
+  geom_col(fill = "steelblue") +
+  facet_wrap(~ libnatmut, scales = "free_y") +
+  scale_y_continuous(labels = scales::label_number(big.mark = " "),
+                     expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Nombre de mutations par année et par nature de mutation",
+       x = "Année de mutation",
+       y = "Nombre de mutations") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+mut_par_dep <- dvf |> 
+  count(coddep, name = "nb_mutations")
+
+ggplot(mut_par_dep, aes(x = factor(coddep), y = nb_mutations)) +
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = format(nb_mutations, big.mark = " ")),
+            vjust = -0.5, size = 3.5) +
+  scale_y_continuous(labels = scales::label_number(big.mark = " "),
+                     expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Nombre de mutations par département",
+       x = "Département",
+       y = "Nombre de mutations") +
+  theme_minimal()
+```
+
+```{r}
+mut_par_dep_type <- dvf |>
+  count(coddep, libnatmut, name = "nb_mutations")
+
+ggplot(mut_par_dep_type, aes(x = factor(coddep), y = nb_mutations)) +
+  geom_col(fill = "steelblue") +
+  facet_wrap(~ libnatmut, scales = "free_y", axes = "all_x") +
+  scale_y_continuous(labels = scales::label_number(big.mark = " "),
+                     expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Nombre de mutations par département et par nature de mutation",
+       x = "Département",
+       y = "Nombre de mutations") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+dvf |>
+  summarise(
+    nb_mutations      = n(),
+    nb_multi_communes = sum(nbcomm > 1, na.rm = TRUE),
+    part_multi        = nb_multi_communes/nb_mutations*100
+  )
+
+```
+3 349 mutations (soit ~0.38% des mutations) sont des mutations qui concernent des bâtiments à cheval sur plusieurs communes
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
