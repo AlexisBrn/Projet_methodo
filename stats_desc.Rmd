@@ -10,7 +10,6 @@ library(ggplot2)
 library(tidyverse)
 ```
 
-
 ```{r}
 dvf <- read.csv2("dvf.csv", sep = ";")
 ```
@@ -54,6 +53,7 @@ ggplot(mut_par_an_type, aes(x = factor(anneemut), y = nb_mutations)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
 ```{r}
 mut_par_dep <- dvf |> 
   count(coddep, name = "nb_mutations")
@@ -95,10 +95,18 @@ dvf |>
   )
 
 ```
-3 349 mutations (soit ~0.38% des mutations) sont des mutations qui concernent des bâtiments à cheval sur plusieurs communes
+
+3 349 mutations (soit \~0.38% des mutations) sont des mutations qui concernent des bâtiments à cheval sur plusieurs communes
 
 ```{r}
+boxplot(dvf$valeurfonc)
+boxplot(log(dvf$valeurfonc))
+```
 
+```{r}
+dvf <- dvf |> 
+  mutate(sbati=as.numeric(sbati))
+boxplot(dvf$sbati)
 ```
 
 ```{r}
@@ -124,8 +132,3 @@ dvf |>
 ```{r}
 
 ```
-
-```{r}
-
-```
-
