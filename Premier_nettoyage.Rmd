@@ -1,6 +1,6 @@
 ---
 title: "Debroussaillage"
-format: html
+format: pdf
 ---
 
 Importation des tables DVF Bretagne et Pays de la loire, puis filtre sur le départments de la Loire Atlantique.
@@ -11,6 +11,7 @@ Géométrie utilisée : système Lambert-93 (EPSG:2154)
 ```{r}
 library(dplyr)
 library(sf)
+library(ggplot2)
 
 dvf_bretagne <- read.csv2("dvf_bretagne.csv", sep = "|")
 
@@ -35,6 +36,12 @@ dvf |>
   dplyr::arrange(desc(valeurfonc)) |>
   dplyr::select(idmutation, valeurfonc, nblocmai, nblocapt, libtypbien) |>
   head(20)
+
+# Supprimer les tables qui ne servent plus
+rm(dvf_bretagne, dvf_loire)
+
+# Liberer la memoire
+gc()
 ```
 
 Suppression des variables inutiles. On garde seulement idmutation comme identifiant
@@ -69,17 +76,6 @@ dvf <- dvf |>
     remove = FALSE,
     na.fail = FALSE
   )
-
-library(mapview)
-
-set.seed(1)
-
-dvf_echantillon <- dvf |>
-  filter(!sf::st_is_empty(geometry)) |>
-  slice_sample(n = 5000)
-
-# Afficher la carte interactive
-mapview(dvf_echantillon)
 ```
 
 Création de la variable de distance à a mer. On prend pour le moment la distance euclidienne.
@@ -120,45 +116,259 @@ summary(dvf$distance_mer_km)
 Création de la variable de distance à une route importante.
 Traçons de route : https://cartes.gouv.fr/rechercher-une-donnee/dataset/IGNF_BD-TOPO
 Documentation (page 19 pour la définition d'importance): https://data.geopf.fr/annexes/ressources/documentation/DC_BDTOPO_2_08.pdf
-```{r}
-routes <- st_read("TRONCON_DE_ROUTE.shp")
 
-st_crs(routes)
+22
+```{r}
+routes_22 <- st_read("routes_22.gpkg")
+
+st_crs(routes_22)
 
 # Vérifier que c'est bien la même projection
-st_crs(dvf) == st_crs(routes)
+st_crs(dvf) == st_crs(routes_22)
 
-names(routes)
-table(routes$IMPORTANCE)
+names(routes_22)
+table(routes_22$importance)
 
 # Choix : garder les importances 1 et 2
-routes <- routes |>
-  filter(as.character(IMPORTANCE) %in% c("1", "2"))
-
-library(ggplot2)
+routes_22 <- routes_22 |>
+  filter(as.character(importance) %in% c("1", "2"))
 
 ggplot() +
   geom_sf(
-    data = routes,
+    data = routes_22,
     color = "red",
     linewidth = 0.2
   ) +
   coord_sf(expand = TRUE) +
   theme_minimal()
-# Voir les limites geographiques des routes
-st_bbox(routes)
+# Voir les limites géographiques des routes
+st_bbox(routes_22)
 
 # Voir le nombre de troncons
-nrow(routes)
+nrow(routes_22)
 
 # Voir la projection
-st_crs(routes)$input
+st_crs(routes_22)$input
+```
+
+35
+```{r}
+routes_35 <- st_read("routes_35.shp")
+
+st_crs(routes_35)
+
+# Vérifier que c'est bien la même projection
+st_crs(dvf) == st_crs(routes_35)
+
+names(routes_35)
+table(routes_35$IMPORTANCE)
+
+# Choix : garder les importances 1 et 2
+routes_35 <- routes_35 |>
+  filter(as.character(IMPORTANCE) %in% c("1", "2"))
+
+ggplot() +
+  geom_sf(
+    data = routes_35,
+    color = "red",
+    linewidth = 0.2
+  ) +
+  coord_sf(expand = TRUE) +
+  theme_minimal()
+# Voir les limites géographiques des routes
+st_bbox(routes_35)
+
+# Voir le nombre de troncons
+nrow(routes_35)
+
+# Voir la projection
+st_crs(routes_35)$input
+```
+
+29
+```{r}
+routes_29 <- st_read("routes_29.gpkg")
+
+st_crs(routes_29)
+
+# Vérifier que c'est bien la même projection
+st_crs(dvf) == st_crs(routes_29)
+
+names(routes_29)
+table(routes_29$IMPORTANCE)
+
+# Choix : garder les importances 1 et 2
+routes_29 <- routes_29 |>
+  filter(as.character(importance) %in% c("1", "2"))
+
+ggplot() +
+  geom_sf(
+    data = routes_29,
+    color = "red",
+    linewidth = 0.2
+  ) +
+  coord_sf(expand = TRUE) +
+  theme_minimal()
+# Voir les limites géographiques des routes
+st_bbox(routes_29)
+
+# Voir le nombre de troncons
+nrow(routes_29)
+
+# Voir la projection
+st_crs(routes_29)$input
+```
+
+56
+```{r}
+routes_56 <- st_read("routes_56.gpkg")
+
+st_crs(routes_56)
+
+names(routes_56)
+
+# Vérifier que c'est bien la même projection
+st_crs(dvf) == st_crs(routes_56)
+
+names(routes_56)
+table(routes_56$importance)
+
+# Choix : garder les importances 1 et 2
+routes_56 <- routes_56 |>
+  filter(as.character(importance) %in% c("1", "2"))
+
+ggplot() +
+  geom_sf(
+    data = routes_56,
+    color = "red",
+    linewidth = 0.2
+  ) +
+  coord_sf(expand = TRUE) +
+  theme_minimal()
+# Voir les limites géographiques des routes
+st_bbox(routes_56)
+
+# Voir le nombre de troncons
+nrow(routes_56)
+
+# Voir la projection
+st_crs(routes_56)$input
+```
+
+44
+```{r}
+routes_44 <- st_read("routes_44.shp")
+
+st_crs(routes_44)
+
+# Vérifier que c'est bien la même projection
+st_crs(dvf) == st_crs(routes_44)
+
+names(routes_44)
+table(routes_44$IMPORTANCE)
+
+# Choix : garder les importances 1 et 2
+routes_44 <- routes_44 |>
+  filter(as.character(IMPORTANCE) %in% c("1", "2"))
+
+ggplot() +
+  geom_sf(
+    data = routes_44,
+    color = "red",
+    linewidth = 0.2
+  ) +
+  coord_sf(expand = TRUE) +
+  theme_minimal()
+# Voir les limites géographiques des routes
+st_bbox(routes_44)
+
+# Voir le nombre de troncons
+nrow(routes_44)
+
+# Voir la projection
+st_crs(routes_44)$input
+```
+Assemblage des routes et affichage visuel
+```{r}
+#routes_35 <- routes_35 |>
+  #rename(importance = IMPORTANCE)
+
+#routes_44 <- routes_44 |>
+  #rename(importance = IMPORTANCE)
+
+routes_22 <- st_sf(importance = routes_22$importance, geometry = st_geometry(routes_22))
+routes_29 <- st_sf(importance = routes_29$importance, geometry = st_geometry(routes_29))
+routes_35 <- st_sf(importance = routes_35$importance, geometry = st_geometry(routes_35))
+routes_44 <- st_sf(importance = routes_44$importance, geometry = st_geometry(routes_44))
+routes_56 <- st_sf(importance = routes_56$importance, geometry = st_geometry(routes_56))
+
+routes <- bind_rows(
+  routes_22,
+  routes_29,
+  routes_35,
+  routes_44,
+  routes_56
+)
+
+ggplot() +
+  geom_sf(
+    data = routes,
+    color = "red",
+    linewidth = 0.3
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Grands axes routiers",
+    subtitle = "Bretagne et Loire-Atlantique"
+  )
+
+table(routes$departement)
+
+table(routes$importance, useNA = "ifany")
+
+ggplot() +
+  geom_sf(data = routes_22, color = "red", linewidth = 0.5) +
+  geom_sf(data = routes_29, color = "blue", linewidth = 0.5) +
+  geom_sf(data = routes_35, color = "green", linewidth = 0.5) +
+  geom_sf(data = routes_44, color = "orange", linewidth = 0.5) +
+  geom_sf(data = routes_56, color = "purple", linewidth = 0.5) +
+  theme_minimal() +
+  labs(title = "Vérification des routes par departement")
+
+st_crs(dvf) == st_crs(routes)
+```
+Calcul des distances aux routes
+```{r}
+# Créer la variable
+dvf$distance_route_km <- NA_real_
+
+# Garder les mutations avec géometrie
+ok <- which(!st_is_empty(dvf))
+
+# Trouver le troncon le plus proche
+indice <- st_nearest_feature(
+  dvf[ok, ],
+  routes
+)
+
+# Calculer la distance en kilomètres
+dvf$distance_route_km[ok] <- as.numeric(
+  st_distance(
+    dvf[ok, ],
+    routes[indice, ],
+    by_element = TRUE
+  )
+) / 1000
+
+summary(dvf$distance_route_km)
 ```
 
 ```{r}
-#write.csv2(
-  #dvf,
-  #file = "C:/Users/nolwe/Documents/ENSAI/3A/Projet methodo/Code/dvf.csv",
-  #row.names = FALSE
-#)
+saveRDS(dvf, "dvf.rds")
+
+write.csv2(
+  dvf,
+  file = "C:/Users/nolwe/Documents/ENSAI/3A/Projet methodo/Code/dvf.csv",
+  row.names = FALSE
+)
 ```
