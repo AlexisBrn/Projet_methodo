@@ -16,7 +16,6 @@ dvf <- read.csv2("dvf.csv", sep = ";")
 
 ```{r}
 summary(dvf)
-
 ```
 
 ```{r}
@@ -110,11 +109,68 @@ boxplot(dvf$sbati)
 ```
 
 ```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
 
+# Préparation des données
+evolution_prix <- dvf %>%
+  filter(
+    !is.na(anneemut),
+    !is.na(libtypbien),
+    !is.na(valeurfonc),
+  ) %>%
+  group_by(anneemut, libtypbien) %>%
+  summarise(
+    prix_moyen = mean(valeurfonc),
+    prix_median = median(valeurfonc),
+    nb_ventes = n(),
+    .groups = "drop"
+  )
+
+# Graphique 1 : Prix moyen
+ggplot(evolution_prix,
+       aes(x = anneemut, y = prix_moyen, color = libtypbien)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = sort(unique(evolution_prix$anneemut))) +
+  scale_y_continuous(
+    labels = scales::label_number(
+      big.mark = " ",
+      suffix = " €"
+    )
+  ) +
+  labs(
+    title = "Évolution du prix moyen des logements",
+    x = "Année",
+    y = "Prix moyen (€)",
+    color = "Type de bien"
+  ) +
+  theme_minimal()
+
+
+# Graphique 2 : Prix médian
+ggplot(evolution_prix,
+       aes(x = anneemut, y = prix_median, color = libtypbien)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = sort(unique(evolution_prix$anneemut))) +
+  scale_y_continuous(
+    labels = scales::label_number(
+      big.mark = " ",
+      suffix = " €"
+    )
+  ) +
+  labs(
+    title = "Évolution du prix médian des logements",
+    x = "Année",
+    y = "Prix médian (€)",
+    color = "Type de bien"
+  ) +
+  theme_minimal()
 ```
 
 ```{r}
-
 ```
 
 ```{r}
