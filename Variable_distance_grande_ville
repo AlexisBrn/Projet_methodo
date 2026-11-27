@@ -1,0 +1,135 @@
+---
+title: "Variable_distance_grande_ville"
+format: html
+---
+
+```{r}
+library(dplyr)
+library(sf)
+library(jsonlite)
+
+url <- paste0(
+  "https://geo.api.gouv.fr/communes",
+  "?fields=nom,code,population,centre"
+)
+
+communes_json <- jsonlite::fromJSON(
+  url,
+  simplifyVector = FALSE
+)
+
+# Vérifier que chaque commune possède les informations utiles
+communes <- bind_rows(lapply(communes_json, function(x) {
+
+  if (
+    is.null(x$code) ||
+    is.null(x$nom) ||
+    is.null(x$population) ||
+    length(x$population) != 1 ||
+    is.na(x$population) ||
+    is.null(x$centre$coordinates) ||
+    length(x$centre$coordinates) != 2
+  ) {
+    return(NULL)
+  }
+
+  data.frame(
+    code = x$code,
+    nom = x$nom,
+    population = as.numeric(x$population),
+    longitude = as.numeric(x$centre$coordinates[[1]]),
+    latitude = as.numeric(x$centre$coordinates[[2]])
+  )
+}))
+
+# Conserver les communes de 50 000 habitants ou plus
+grandes_villes <- communes %>%
+  filter(
+    population >= 50000,
+    longitude >= -6,
+    longitude <= 10,
+    latitude >= 41,
+    latitude <= 52
+  ) %>%
+  st_as_sf(
+    coords = c("longitude", "latitude"),
+    crs = 4326
+  ) %>%
+  st_transform(2154)
+
+# Vérification
+print(grandes_villes)
+```
+```{r}
+# 1. Identifier les observations avec coordonnées valides
+ok <- which(
+  !is.na(dvf$geompar_x) &
+  !is.na(dvf$geompar_y) &
+  is.finite(dvf$geompar_x) &
+  is.finite(dvf$geompar_y)
+)
+
+# 2. Créer un objet spatial temporaire
+# Uniquement avec les observations valides
+dvf_points <- st_as_sf(
+  dvf[ok, ],
+  coords = c("geompar_x", "geompar_y"),
+  crs = 2154,
+  remove = FALSE
+)
+
+# 3. Harmoniser la projection des grandes villes
+grandes_villes <- st_transform(grandes_villes, 2154)
+
+# 4. Trouver la grande ville la plus proche
+indice <- st_nearest_feature(
+  dvf_points,
+  grandes_villes
+)
+
+# 5. Initialiser les variables dans DVF
+dvf$distance_grande_ville_km <- NA_real_
+dvf$grande_ville_proche <- NA_character_
+
+# 6. Calculer les distances en kilomètres
+dvf$distance_grande_ville_km[ok] <- as.numeric(
+  st_distance(
+    dvf_points,
+    grandes_villes[indice, ],
+    by_element = TRUE
+  )
+) / 1000
+
+# 7. Récupérer le nom de la grande ville la plus proche
+dvf$grande_ville_proche[ok] <- grandes_villes$nom[indice]
+
+# 8. Vérifications
+summary(dvf$distance_grande_ville_km)
+
+sum(is.na(dvf$distance_grande_ville_km))
+
+dvf %>%
+  count(grande_ville_proche, sort = TRUE) %>%
+  head(15)
+```
+```{r}
+library(ggplot2)
+library(scales)
+
+ggplot(
+  dvf %>% filter(!is.na(distance_grande_ville_km)),
+  aes(x = distance_grande_ville_km)
+) +
+  geom_histogram(
+    binwidth = 5,
+    fill = "steelblue",
+    color = "white"
+  ) +
+  labs(
+    title = "Distribution des distances à la grande ville la plus proche",
+    subtitle = "Bretagne historique (y compris Loire-Atlantique)",
+    x = "Distance à la grande ville la plus proche (km)",
+    y = "Nombre de transactions"
+  ) +
+  theme_minimal(base_size = 13)
+```
